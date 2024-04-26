@@ -8,6 +8,6 @@ comp="compute=local"
 
 # test mae crop
 # ./.python-greene submitit_hydra.py $comp exp=breakout_videogen_concat_avg_autoregress name="$(date +%F)-testVIDEOGEN-1_4M_concat_avg_autoregress2"
-./.python-greene submitit_hydra.py $comp exp=save_with_atariari name="$(date +%F)-breakout"
+./.python-greene submitit_hydra.py $comp exp=save_with_atariari name="$(date +%F)-breakout_400k"
 
 # ./.python-greene submitit_hydra.py $comp exp=breakout_iris_decoded name="$(date +%F)-test_IRIS_DECODED"
