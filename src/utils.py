@@ -630,8 +630,10 @@ def make_video(fname, fps, frames):
     assert c == 3
 
     video = cv2.VideoWriter(str(fname), cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-    for frame in frames:
-        video.write(frame[:, :, ::-1])
+    for i in range(0,len(frames),4):
+        frame = frames[i]
+        # video.write(frame[:, :, ::-1])
+        video.write(np.uint8(frame.flip(dims=(-1,)).cpu().numpy()))
     video.release()
 
 
@@ -643,4 +645,4 @@ def save_recording(record_dir: Path, ep_num, frames, actions):
 
     np.save(record_dir / frames_file, frames)
     np.save(record_dir / actions_file, actions)
-    print("Saved recording ", ep_num)
+    print("Saved frames and actions ", ep_num)

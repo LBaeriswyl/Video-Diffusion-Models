@@ -39,8 +39,8 @@ def get_ppo_color_rollouts(env_name, steps, seed=42, num_processes=1,
     while not os.path.exists(filepath):
         time.sleep(5)
 
-    envs = make_vec_envs(env_name, seed,  num_processes, num_frame_stack, downsample, False)
-    color_envs = make_vec_envs(env_name, seed,  num_processes, num_frame_stack, downsample, True)
+    envs = make_vec_envs(env_name, seed,  num_processes, 1, downsample, False)
+    color_envs = make_vec_envs(env_name, seed,  num_processes, num_frame_stack, True, True) # Set downsample to True
 
     actor_critic, ob_rms = torch.load(filepath, map_location=lambda storage, loc: storage)
 
@@ -61,16 +61,15 @@ def get_ppo_color_rollouts(env_name, steps, seed=42, num_processes=1,
         with torch.no_grad():
             _, action, _, _, actor_features, dist_entropy = actor_critic.act(obs, None, masks, deterministic=False)
         
-        #action = torch.tensor([envs.action_space.sample() if np.random.uniform(0, 1) < 0.2 else action[i]
-        #                       for i in range(num_processes)]).unsqueeze(dim=1) ### take random actions sometimes #TODO: Change this
+        # action = torch.tensor([envs.action_space.sample() if np.random.uniform(0, 1) < 0.2 else action[i]
+        #                       for i in range(num_processes)]).unsqueeze(dim=1) ### take random actions sometimes
         
         ## Sticky actions
         if prev_action and np.random.uniform(0, 1) < 0.25:
             taken_action = prev_action
         else:
-            taken_action = action[0]
-        
-        prev_action = taken_action
+            taken_action = torch.tensor([action[0]]).unsqueeze(dim=1)
+            prev_action = taken_action
 
         entropies.append(dist_entropy.clone())
         obs, reward, done, infos = envs.step(taken_action)
@@ -102,7 +101,7 @@ def get_ppo_color_rollouts(env_name, steps, seed=42, num_processes=1,
             else:
                 episodes[i].append([obs[i].clone()])
                 color_episodes[i].append([color_obs[i].clone()])
-                episode_actions[i][-1].append([action[i].clone()])
+                episode_actions[i].append([action[i].clone()])
                 if "labels" in info.keys():
                     episode_labels[i].append([info["labels"]])
                 prev_action = None
@@ -110,6 +109,7 @@ def get_ppo_color_rollouts(env_name, steps, seed=42, num_processes=1,
     # Convert to 2d list from 3d list
     episodes = list(chain.from_iterable(episodes))
     color_episodes = list(chain.from_iterable(color_episodes))
+    episode_actions = list(chain.from_iterable(episode_actions))
     # Convert to 2d list from 3d list
     episode_labels = list(chain.from_iterable(episode_labels))
     mean_entropy = torch.stack(entropies).mean()
@@ -126,7 +126,7 @@ def get_episodes(env_name,
                  steps,
                  seed=42,
                  num_processes=1,
-                 num_frame_stack=1,
+                 num_frame_stack=4,
                  downsample=False,
                  color=False,
                  entropy_threshold=0.6,

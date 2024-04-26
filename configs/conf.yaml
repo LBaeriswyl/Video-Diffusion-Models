@@ -3,7 +3,7 @@ defaults:
   - compute: slurm # must be slurm or local
   - exp: ???
 
-base_output_dir: /scratch/sd5313/CILVR/fall23/LLVM/DiffusionModels #<YOUR EXPERIMENT FOLDER>
+base_output_dir: /scratch/lvb243/ddrl-project/Video-Diffusion-Models #<YOUR EXPERIMENT FOLDER>
 experiment: ???
 sub_dir: ${experiment}
 name: ???

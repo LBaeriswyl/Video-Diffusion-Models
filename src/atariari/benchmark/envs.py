@@ -13,6 +13,7 @@ from baselines import bench
 from baselines.common.atari_wrappers import make_atari, EpisodicLifeEnv, FireResetEnv, WarpFrame, ScaledFloatFrame, \
     ClipRewardEnv, FrameStack
 from .wrapper import AtariARIWrapper
+from PIL import Image
 
 
 def make_env(env_id, seed, rank, log_dir, downsample=True, color=False):
@@ -80,6 +81,22 @@ def make_vec_envs(env_name, seed,  num_processes, num_frame_stack=1, downsample=
     return envs
 
 
+class ResizeObsWrapper(gym.ObservationWrapper):
+    def __init__(self, env: gym.Env, size) -> None:
+        gym.ObservationWrapper.__init__(self, env)
+        self.size = tuple(size)
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(size[0], size[1], 3), dtype=np.uint8)
+        self.unwrapped.original_obs = None
+
+    def resize(self, obs):
+        img = Image.fromarray(obs)
+        img = img.resize(self.size, Image.BILINEAR)
+        return np.array(img)
+
+    def observation(self, observation) -> np.ndarray:
+        self.unwrapped.original_obs = observation
+        return self.resize(observation)
+
 class GrayscaleWrapper(gym.ObservationWrapper):
     """Convert observations to grayscale."""
     def __init__(self, env):
@@ -105,7 +122,7 @@ def wrap_deepmind(env, downsample=True, episode_life=True, clip_rewards=True, fr
     if 'FIRE' in env.unwrapped.get_action_meanings():
         env = FireResetEnv(env)
     if downsample:
-        env = WarpFrame(env, grayscale=False)
+        env = ResizeObsWrapper(env, (64,64)) # WarpFrame(env, grayscale=False)
     if not color:
         env = GrayscaleWrapper(env)
     if scale:
